@@ -3,8 +3,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import questions.Pos2018Info;
-import questions.Ufam2022Bio;
+import questions.DireitoQuestions;
+import questions.MedicinaQuestions;
 
 public class QuizApp extends JFrame {
     private CardLayout cardLayout;
@@ -41,29 +41,29 @@ public class QuizApp extends JFrame {
         panel.add(label, BorderLayout.NORTH);
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
-        JButton biologiaButton = new JButton("UFAM 2022 Biologia");
-        JButton informaticaButton = new JButton("Programa de Pós-graduação em Informática 2018");
+        JButton medicinaButton = new JButton("Medicina");
+        JButton direitoButton = new JButton("Direito");
 
-        biologiaButton.addActionListener(new ActionListener() {
+        medicinaButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                questions = Ufam2022Bio.getQuestions();
+                questions = MedicinaQuestions.getQuestions();
                 addQuestionPanels();
                 cardLayout.show(mainPanel, "question0");
             }
         });
 
-        informaticaButton.addActionListener(new ActionListener() {
+        direitoButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                questions = Pos2018Info.getQuestions();
+                questions = DireitoQuestions.getQuestions();
                 addQuestionPanels();
                 cardLayout.show(mainPanel, "question0");
             }
         });
 
-        buttonPanel.add(biologiaButton);
-        buttonPanel.add(informaticaButton);
+        buttonPanel.add(medicinaButton);
+        buttonPanel.add(direitoButton);
         panel.add(buttonPanel, BorderLayout.CENTER);
 
         return panel;
@@ -103,7 +103,7 @@ public class QuizApp extends JFrame {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (group.getSelection() != null) {
-                    if (!group.getSelection().getActionCommand().equals(questions.get(index)[6])) { // Mudou para 6
+                    if (!group.getSelection().getActionCommand().equals(questions.get(index)[6])) {
                         incorrectAnswers.add(questions.get(index));
                     } else {
                         score++;
@@ -112,8 +112,7 @@ public class QuizApp extends JFrame {
                     if (currentQuestion < questions.size()) {
                         cardLayout.show(mainPanel, "question" + currentQuestion);
                     } else {
-                        updateResult();
-                        cardLayout.show(mainPanel, "result");
+                        showResult();
                     }
                 }
             }
@@ -123,87 +122,62 @@ public class QuizApp extends JFrame {
         return panel;
     }
 
+    private void showResult() {
+        int totalQuestions = questions.size();
+        resultLabel.setText("Você acertou " + score + " de " + totalQuestions + " perguntas.");
+        progressBar.setValue((int) ((double) score / totalQuestions * 100));
+
+        StringBuilder incorrectAnswersText = new StringBuilder("Respostas incorretas:\n");
+        for (String[] question : incorrectAnswers) {
+            incorrectAnswersText.append("Pergunta: ").append(question[0]).append("\n");
+            incorrectAnswersText.append("Resposta correta: ").append(question[6]).append("\n\n");
+        }
+        incorrectAnswersArea.setText(incorrectAnswersText.toString());
+
+        cardLayout.show(mainPanel, "result");
+    }
+
     private JPanel createResultPanel() {
         JPanel panel = new JPanel(new BorderLayout());
 
-        JPanel topPanel = new JPanel(new GridLayout(2, 1));
-        JLabel performanceLabel = new JLabel("Seu desempenho foi:");
-        performanceLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        topPanel.add(performanceLabel);
+        resultLabel = new JLabel();
+        resultLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        panel.add(resultLabel, BorderLayout.NORTH);
 
         progressBar = new JProgressBar(0, 100);
-        progressBar.setStringPainted(true);
-        progressBar.setForeground(Color.GREEN);
-        topPanel.add(progressBar);
-
-        panel.add(topPanel, BorderLayout.NORTH);
-
-        resultLabel = new JLabel("Seu desempenho: ");
-        resultLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        panel.add(resultLabel, BorderLayout.CENTER);
+        panel.add(progressBar, BorderLayout.CENTER);
 
         incorrectAnswersArea = new JTextArea();
         incorrectAnswersArea.setEditable(false);
-        incorrectAnswersArea.setLineWrap(true);
-        incorrectAnswersArea.setWrapStyleWord(true);
         JScrollPane scrollPane = new JScrollPane(incorrectAnswersArea);
-        panel.add(scrollPane, BorderLayout.CENTER);
+        panel.add(scrollPane, BorderLayout.SOUTH);
 
-        JPanel bottomPanel = new JPanel(new FlowLayout());
-        JButton retryButton = new JButton("Tentar Novamente");
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 2));
+        JButton retryButton = new JButton("Tentar novamente");
+        JButton exitButton = new JButton("Sair");
+
         retryButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                resetQuiz();
+                currentQuestion = 0;
+                score = 0;
+                incorrectAnswers.clear();
                 cardLayout.show(mainPanel, "selection");
             }
         });
 
-        JButton finishButton = new JButton("Finalizar");
-        finishButton.addActionListener(new ActionListener() {
+        exitButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 System.exit(0);
             }
         });
 
-        bottomPanel.add(retryButton);
-        bottomPanel.add(finishButton);
-        panel.add(bottomPanel, BorderLayout.SOUTH);
+        buttonPanel.add(retryButton);
+        buttonPanel.add(exitButton);
+        panel.add(buttonPanel, BorderLayout.SOUTH);
 
         return panel;
-    }
-
-    private void updateResult() {
-        int percentage = (int) ((double) score / questions.size() * 100);
-        resultLabel.setText("Seu desempenho: " + score + " de " + questions.size() + " respostas corretas.");
-        progressBar.setValue(percentage);
-        displayIncorrectAnswers();
-    }
-
-    private void displayIncorrectAnswers() {
-        StringBuilder sb = new StringBuilder();
-        for (String[] question : incorrectAnswers) {
-            sb.append("Questão: ").append(question[0]).append("\n");
-            sb.append("Resposta correta: ").append(getCorrectAnswerText(question)).append("\n\n");
-        }
-        incorrectAnswersArea.setText(sb.toString());
-    }
-
-    private String getCorrectAnswerText(String[] question) {
-        char correctAnswer = question[6].charAt(0); // Mudou para 6
-        int correctAnswerIndex = correctAnswer - 'A' + 1; // Convert 'A' to 1, 'B' to 2, etc.
-        return question[correctAnswerIndex];
-    }
-
-    private void resetQuiz() {
-        currentQuestion = 0;
-        score = 0;
-        incorrectAnswers.clear();
-        mainPanel.removeAll();
-        mainPanel.add(createSelectionPanel(), "selection");
-        mainPanel.add(createResultPanel(), "result");
-        addQuestionPanels();
     }
 
     public static void main(String[] args) {
